@@ -9,11 +9,15 @@ import RequestHandler = utils.RequestHandler;
 import expectFailure = utils.expectFailure;
 
 
+// Set up debug logging
 Logger.useDefaults();
 var kernel_log = Logger.get('kernel');
 kernel_log.setLevel(Logger.DEBUG);
 
 
+/**
+ * Kernel class test rig.
+ */
 class KernelTester {
 
   constructor(kernel: Kernel) {
@@ -25,18 +29,30 @@ class KernelTester {
     this._handler = new RequestHandler();
   }
 
+  /**
+   * Repond to the latest Ajax request.
+   */
   respond(statusCode: number, data: any, header?: any): void {
     this._handler.respond(statusCode, data, header);
   }
 
+  /**
+   * Register a connection callback with the websocket server.
+   */
   onConnection(cb: () => void) {
     this._server.on('connection', cb);
   }
 
+  /**
+   * Register a message callback with the websocket server.
+   */
   onMessage(cb: () => void) {
     this._server.on('message', cb);
   }
 
+  /**
+   * Register a close with the websocket server.
+   */
   onClose(cb: () => void) {
     this._server.on('close', cb);
   }
