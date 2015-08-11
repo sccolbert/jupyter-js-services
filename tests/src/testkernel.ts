@@ -20,6 +20,9 @@ kernel_log.setLevel(Logger.DEBUG);
  */
 class KernelTester {
 
+  /**
+   * Create a new Kernel tester.
+   */
   constructor(kernel: Kernel) {
     (<any>window).WebSocket = MockWebSocket;
     this._kernel = kernel;
