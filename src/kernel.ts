@@ -315,7 +315,6 @@ class Kernel {
     this._handleStatus('interrupting');
 
     var url = utils.urlJoinEncode(this._kernelUrl, 'interrupt');
-    console.log("hi there");
     return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
@@ -362,13 +361,13 @@ class Kernel {
    */
   start(id?: IKernelId): Promise<IKernelId> {
     if (id !== void 0) {
-      console.log('setting this thing');
       this.id = id.id;
       this.name = id.name;
     }
     if (!this._kernelUrl) {
       throw Error('You must set the kernel id before starting.');
     }
+    this._handleStatus('starting');
     return utils.ajaxRequest(this._kernelUrl, {
       method: "POST",
       dataType: "json"
@@ -388,10 +387,12 @@ class Kernel {
   /**
    * DELETE /api/kernels/[:kernel_id]
    *
-   * Kill a kernel. Note: if useing a session, Session.delete()
+   * Shut down a kernel. Note: if useing a session, Session.shutdown()
    * should be used instead.
    */
-  delete(): Promise<void> {
+  shutdown(): Promise<void> {
+    this._handleStatus('shutdown');
+    this.disconnect();
     return utils.ajaxRequest(this._kernelUrl, {
       method: "DELETE",
       dataType: "json"
@@ -675,6 +676,7 @@ class Kernel {
     if (this._ws && this._ws.readyState === WebSocket.CLOSED) {
       this._ws = null;
     }
+    this._handleStatus('disconnected');
   }
 
   /**
@@ -688,7 +690,6 @@ class Kernel {
     // get kernel info so we know what state the kernel is in
     this.kernelInfo().onReply((reply?: IKernelMsg) => {
       this._infoReply = reply.content;
-      console.log('info reply');
       this._handleStatus('ready');
       this._autorestartAttempt = 0;
     });

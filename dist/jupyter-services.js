@@ -326,7 +326,6 @@ var jupyter;
                 var _this = this;
                 this._handleStatus('interrupting');
                 var url = services.utils.urlJoinEncode(this._kernelUrl, 'interrupt');
-                console.log("hi there");
                 return services.utils.ajaxRequest(url, {
                     method: "POST",
                     dataType: "json"
@@ -371,13 +370,13 @@ var jupyter;
             Kernel.prototype.start = function (id) {
                 var _this = this;
                 if (id !== void 0) {
-                    console.log('setting this thing');
                     this.id = id.id;
                     this.name = id.name;
                 }
                 if (!this._kernelUrl) {
                     throw Error('You must set the kernel id before starting.');
                 }
+                this._handleStatus('starting');
                 return services.utils.ajaxRequest(this._kernelUrl, {
                     method: "POST",
                     dataType: "json"
@@ -395,10 +394,12 @@ var jupyter;
             /**
              * DELETE /api/kernels/[:kernel_id]
              *
-             * Kill a kernel. Note: if useing a session, Session.delete()
+             * Shut down a kernel. Note: if useing a session, Session.shutdown()
              * should be used instead.
              */
-            Kernel.prototype.delete = function () {
+            Kernel.prototype.shutdown = function () {
+                this._handleStatus('shutdown');
+                this.disconnect();
                 return services.utils.ajaxRequest(this._kernelUrl, {
                     method: "DELETE",
                     dataType: "json"
@@ -444,10 +445,12 @@ var jupyter;
                 var _this = this;
                 if (this._ws !== null) {
                     if (this._ws.readyState === WebSocket.OPEN) {
+                        console.log('disconnect');
                         this._ws.onclose = function () { _this._clearSocket(); };
                         this._ws.close();
                     }
                     else {
+                        console.log('straight clearsocket');
                         this._clearSocket();
                     }
                 }
@@ -664,9 +667,11 @@ var jupyter;
              * Clear the websocket if necessary.
              */
             Kernel.prototype._clearSocket = function () {
+                console.log('_clearSocket');
                 if (this._ws && this._ws.readyState === WebSocket.CLOSED) {
                     this._ws = null;
                 }
+                this._handleStatus('disconnected');
             };
             /**
              * Perform necessary tasks once the connection to the kernel has
@@ -680,7 +685,6 @@ var jupyter;
                 // get kernel info so we know what state the kernel is in
                 this.kernelInfo().onReply(function (reply) {
                     _this._infoReply = reply.content;
-                    console.log('info reply');
                     _this._handleStatus('ready');
                     _this._autorestartAttempt = 0;
                 });

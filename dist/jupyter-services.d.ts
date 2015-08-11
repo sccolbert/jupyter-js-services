@@ -202,10 +202,10 @@ declare module jupyter.services {
         /**
          * DELETE /api/kernels/[:kernel_id]
          *
-         * Kill a kernel. Note: if useing a session, Session.delete()
+         * Shut down a kernel. Note: if useing a session, Session.shutdown()
          * should be used instead.
          */
-        delete(): Promise<void>;
+        shutdown(): Promise<void>;
         /**
          * Connect to the server-side the kernel.
          *

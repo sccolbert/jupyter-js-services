@@ -2,14 +2,14 @@
 // Project: http://github.com/jonnyreeves/js-logger
 
 interface ILogLevel {
-    value: number;
-    name: string;
+  value: number;
+  name: string;
 }
 
 interface ILogContext {
-    name: string;
-    level: ILogLevel;
-    filterLevel: ILogLevel;
+  name: string;
+  level: ILogLevel;
+  filterLevel: ILogLevel;
 }
 
 
