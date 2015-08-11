@@ -421,20 +421,6 @@ class Kernel {
   }
 
   /**
-   * Reconnect to a disconnected kernel. This is not actually a
-   * standard HTTP request, but useful function nonetheless for
-   * reconnecting to the kernel if the connection is somehow lost.
-   */
-  reconnect(): void {
-    if (this.isConnected) {
-      return;
-    }
-    this._reconnectAttempt = this._reconnectAttempt + 1;
-    this._handleStatus('reconnecting');
-    this._startChannels();
-  }
-
-  /**
    * Disconnect the kernel.
    */
   disconnect(): void {
@@ -798,6 +784,20 @@ class Kernel {
     } else if (execution_state === 'dead') {
       this._kernelDead();
     }
+  }
+
+  /**
+   * Reconnect to a disconnected kernel. This is not actually a
+   * standard HTTP request, but useful function nonetheless for
+   * reconnecting to the kernel if the connection is somehow lost.
+   */
+  private _reconnect(): void {
+    if (this.isConnected) {
+      return;
+    }
+    this._reconnectAttempt = this._reconnectAttempt + 1;
+    this._handleStatus('reconnecting');
+    this._startChannels();
   }
 
   private _id = '';

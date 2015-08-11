@@ -278,6 +278,30 @@ describe('jupyter.services - Kernel', () => {
 
     });
 
+
+    describe('#disconnect()', () => {
+
+      it('should disconnect the websocket', (done) => {
+        var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
+        kernel.connect();
+        expect(kernel.status).to.be('created');
+
+        tester.onConnection(() => {
+          expect(kernel.isConnected).to.be(true);
+          kernel.disconnect();
+          setTimeout(() => {
+            expect(kernel.isConnected).to.be(false);
+            done();
+          }, 10);
+        });
+        
+      });
+
+    });
+
+
+
 });
 
 }  // module tests
