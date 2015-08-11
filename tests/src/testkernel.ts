@@ -18,25 +18,18 @@ kernel_log.setLevel(Logger.DEBUG);
 /**
  * Kernel class test rig.
  */
-class KernelTester {
+class KernelTester extends RequestHandler {
 
   /**
    * Create a new Kernel tester.
    */
   constructor(kernel: Kernel) {
+    super();
     (<any>window).WebSocket = MockWebSocket;
     this._kernel = kernel;
     kernel.name = "test";
     kernel.id = "1234";
     this._server = new MockServer(this._kernel.wsUrl);
-    this._handler = new RequestHandler();
-  }
-
-  /**
-   * Repond to the latest Ajax request.
-   */
-  respond(statusCode: number, data: any, header?: any): void {
-    this._handler.respond(statusCode, data, header);
   }
 
   /**
@@ -61,7 +54,6 @@ class KernelTester {
   }
 
   private _kernel: Kernel = null;
-  private _handler: RequestHandler = null;
   private _server: MockServer = null;
 }
 
@@ -314,9 +306,7 @@ describe('jupyter.services - Kernel', () => {
             done();
           }, 10);
         });
-        
       });
-
     });
 
 
