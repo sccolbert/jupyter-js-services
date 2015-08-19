@@ -5,7 +5,9 @@
 import { ISignal, defineSignal } from 'phosphor-signaling';
 
 import { IDisposable, Disposable } from './disposable';
+
 import { serialize, deserialize } from './serialize';
+
 import * as utils from './utils';
 
 
@@ -13,12 +15,6 @@ import * as utils from './utils';
  * The url for the kernel service.
  */
 var KERNEL_SERVICE_URL = 'api/kernel';
-
-
-/**
- * Stub for Mozilla web socket type.
- */
-declare var MozWebSocket: any;
 
 
 /**
@@ -67,8 +63,8 @@ interface IKernelExecute {
  */
 export
 interface IKernelId {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
 
@@ -173,17 +169,17 @@ class Kernel {
     return utils.ajaxRequest(kernelServiceUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: utils.IAjaxSuccess): IKernelId[] => {
-      if (success.xhr.status === 200) {
-        if (!Array.isArray(success.data)) {
-          throw Error('Invalid kernel list');
-        }
-        for (var i = 0; i < success.data.length; i++) {
-          validateKernelId(success.data[i]);
-        }
-        return success.data;
+    }).then((success: utils.IAjaxSuccess) => {
+      if (success.xhr.status !== 200) {
+        throw Error('Invalid Status: ' + success.xhr.status);
       }
-      throw Error('Invalid Status: ' + success.xhr.status);
+      if (!Array.isArray(success.data)) {
+        throw Error('Invalid kernel list');
+      }
+      for (var i = 0; i < success.data.length; i++) {
+        validateKernelId(success.data[i]);
+      }
+      return <IKernelId[]>success.data;
     });
   }
 
@@ -265,19 +261,19 @@ class Kernel {
    */
   set id(value: string) {
     this._id = value;
-    this._kernelUrl = utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL,
-                                          this._id);
+    this._kernelUrl = utils.urlJoinEncode(
+      this._baseUrl, KERNEL_SERVICE_URL, this._id
+    );
   }
 
   /**
    * Get the full websocket url.
    */
   get wsUrl(): string {
-    return [
-      this._wsUrl,
-      utils.urlJoinEncode(this._kernelUrl, 'channels'),
+    return (
+      this._wsUrl + utils.urlJoinEncode(this._kernelUrl, 'channels') +
       "?session_id=" + this._staticId
-    ].join('')
+    );
   }
 
   /**
@@ -294,9 +290,10 @@ class Kernel {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validateKernelId(success.data);
-      return success.data;
+      return <IKernelId>success.data;
     }, (error: utils.IAjaxError) => {
       this._onError(error);
+      return <IKernelId>void 0;
     });
   }
 
@@ -307,7 +304,6 @@ class Kernel {
    */
   interrupt(): Promise<void> {
     this._handleStatus('interrupting');
-
     var url = utils.urlJoinEncode(this._kernelUrl, 'interrupt');
     return utils.ajaxRequest(url, {
       method: "POST",
@@ -329,7 +325,6 @@ class Kernel {
   restart(): Promise<IKernelId> {
     this._handleStatus('restarting');
     this.disconnect();
-
     var url = utils.urlJoinEncode(this._kernelUrl, 'restart');
     return utils.ajaxRequest(url, {
       method: "POST",
@@ -340,12 +335,12 @@ class Kernel {
       }
       validateKernelId(success.data);
       this.connect();
-      return success.data;
+      return <IKernelId>success.data;
     }, (error: utils.IAjaxError) => {
       this._onError(error);
+      return <IKernelId>void 0;
     });
   }
-
 
   /**
    * POST /api/kernels/[:kernel_id]
@@ -371,12 +366,12 @@ class Kernel {
       }
       validateKernelId(success.data);
       this.connect(success.data);
-      return success.data;
+      return <IKernelId>success.data;
     }, (error: utils.IAjaxError) => {
       this._onError(error);
+      return <IKernelId>void 0;
     });
   }
-
 
   /**
    * DELETE /api/kernels/[:kernel_id]
@@ -418,7 +413,7 @@ class Kernel {
    * Disconnect the kernel.
    */
   disconnect(): void {
-    if (this._ws !== null) {
+    if (this._ws) {
       if (this._ws.readyState === WebSocket.OPEN) {
         this._ws.onclose = () => { this._clearSocket(); };
         this._ws.close();
@@ -480,11 +475,7 @@ class Kernel {
    * [here](http://ipython.org/ipython-doc/dev/development/messaging.html#object-information)
    */
   inspect(code: string, cursor_pos: number): IKernelFuture {
-    var content = {
-      code: code,
-      cursor_pos: cursor_pos,
-      detail_level: 0
-    };
+    var content = { code: code, cursor_pos: cursor_pos, detail_level: 0 };
     return this.sendShellMessage("inspect_request", content);
   }
 
@@ -523,10 +514,7 @@ class Kernel {
    * [here](http://ipython.org/ipython-doc/dev/development/messaging.html#complete)
    */
   complete(code: string, cursor_pos: number): IKernelFuture {
-    var content = {
-      code: code,
-      cursor_pos: cursor_pos
-    };
+    var content = { code: code, cursor_pos: cursor_pos };
     return this.sendShellMessage("complete_request", content);
   }
 
@@ -543,10 +531,7 @@ class Kernel {
     if (!this.isConnected) {
       throw new Error("kernel is not connected");
     }
-    var content = {
-      value: input
-    };
-    var msg = this._createMsg("input_reply", content);
+    var msg = this._createMsg("input_reply", { value: input });
     msg.channel = 'stdin';
     this._ws.send(serialize(msg));
     return msg.header.msgId;
@@ -555,8 +540,7 @@ class Kernel {
   /**
    * Create a kernel message given input attributes.
    */
-  private _createMsg(msg_type: string, content: any,
-    metadata = {}, buffers: string[] = []): IKernelMsg {
+  private _createMsg(msg_type: string, content: any, metadata = {}, buffers: string[] = []): IKernelMsg {
     var msg: IKernelMsg = {
       header: {
         msgId: utils.uuid(),
@@ -592,8 +576,7 @@ class Kernel {
    * another error.
    */
   private _onError(error: utils.IAjaxError): void {
-    var msg = "API request failed (" + error.statusText + "): ";
-    console.error(msg);
+    console.error("API request failed (" + error.statusText + "): ");
     throw Error(error.statusText);
   }
 
@@ -625,13 +608,14 @@ class Kernel {
         // if that fails, then assume the kernel is dead,
         // otherwise just follow the typical websocket closed
         // protocol.
-        this.getInfo().then(function() {
-          this._ws_closed(ws_host_url, false);
-        }, function() {
-          this._kernel_dead();
+        this.getInfo().then(() => {
+          this._wsClosed(ws_host_url, false);
+        }, () => {
+          this._kernelDead();
         });
       }
     };
+
     this._ws.onerror = (evt: ErrorEvent) => {
       if (already_called_onclose) {
         return;
@@ -643,6 +627,7 @@ class Kernel {
     this._ws.onopen = (evt: Event) => {
       this._wsOpened(evt);
     };
+
     var ws_closed_late = (evt: CloseEvent) => {
       if (already_called_onclose) {
         return;
@@ -652,12 +637,14 @@ class Kernel {
         this._wsClosed(ws_host_url, false);
       }
     };
+
     // switch from early-close to late-close message after 1s
     setTimeout(() => {
       if (this._ws !== null) {
         this._ws.onclose = ws_closed_late;
       }
     }, 1000);
+
     this._ws.onmessage = (evt: MessageEvent) => {
       this._handleWSMessage(evt);
     };
@@ -780,7 +767,6 @@ class Kernel {
         this._handleStatus('ready');
         this._autorestartAttempt = 0;
       });
-
     } else if (execution_state === 'restarting') {
       // autorestarting is distinct from restarting,
       // in that it means the kernel died and the server is restarting it.
@@ -788,7 +774,6 @@ class Kernel {
       // autorestart shows the more prominent dialog.
       this._autorestartAttempt = this._autorestartAttempt + 1;
       this._handleStatus('autorestarting');
-
     } else if (execution_state === 'dead') {
       this._kernelDead();
     }
@@ -900,9 +885,9 @@ class KernelFutureHandler extends Disposable implements IKernelFuture {
         }
       }
     } else if (msg.channel === 'shell') {
-      var reply = this._output;
+      var reply = this._reply;
       if (reply) reply(msg);
-      this._setFlag(KernelFutureFlag.GotReply)
+      this._setFlag(KernelFutureFlag.GotReply);
       if (this._testFlag(KernelFutureFlag.GotIdle)) {
         this._handleDone(msg);
       }
@@ -973,10 +958,10 @@ class KernelFutureHandler extends Disposable implements IKernelFuture {
  */
 export
 function validateKernelId(info: IKernelId) : void {
-   if (!info.hasOwnProperty('name') || !info.hasOwnProperty('id')) {
-     throw Error('Invalid kernel id');
-   }
-   if ((typeof info.id !== 'string') || (typeof info.name !== 'string')) {
-     throw Error('Invalid kernel id');
-   }
+  if (!info.hasOwnProperty('name') || !info.hasOwnProperty('id')) {
+    throw Error('Invalid kernel id');
+  }
+  if (typeof info.id !== 'string' || typeof info.name !== 'string') {
+    throw Error('Invalid kernel id');
+  }
 }
