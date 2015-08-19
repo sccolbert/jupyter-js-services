@@ -5,6 +5,7 @@
 import { ISignal, defineSignal } from 'phosphor-signaling';
 
 import { IKernelId, Kernel, validateKernelId } from './kernel';
+
 import * as utils from './utils';
 
 
