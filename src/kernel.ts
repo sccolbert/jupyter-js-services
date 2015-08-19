@@ -10,6 +10,8 @@ import { serialize, deserialize } from './serialize';
 
 import * as utils from './utils';
 
+import * as validate from './validate';
+
 
 /**
  * The url for the kernel service.
@@ -177,7 +179,7 @@ class Kernel {
         throw Error('Invalid kernel list');
       }
       for (var i = 0; i < success.data.length; i++) {
-        validateKernelId(success.data[i]);
+        validate.validateKernelId(success.data[i]);
       }
       return <IKernelId[]>success.data;
     });
@@ -289,7 +291,7 @@ class Kernel {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateKernelId(success.data);
+      validate.validateKernelId(success.data);
       return <IKernelId>success.data;
     }, (error: utils.IAjaxError) => {
       this._onError(error);
@@ -333,7 +335,7 @@ class Kernel {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateKernelId(success.data);
+      validate.validateKernelId(success.data);
       this.connect();
       return <IKernelId>success.data;
     }, (error: utils.IAjaxError) => {
@@ -364,7 +366,7 @@ class Kernel {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateKernelId(success.data);
+      validate.validateKernelId(success.data);
       this.connect(success.data);
       return <IKernelId>success.data;
     }, (error: utils.IAjaxError) => {
@@ -950,18 +952,4 @@ class KernelFutureHandler extends Disposable implements IKernelFuture {
   private _output: (msg: IKernelMsg) => void = null;
   private _reply: (msg: IKernelMsg) => void = null;
   private _done: (msg: IKernelMsg) => void = null;
-}
-
-
-/**
- * Validate an object as being of IKernelID type
- */
-export
-function validateKernelId(info: IKernelId) : void {
-  if (!info.hasOwnProperty('name') || !info.hasOwnProperty('id')) {
-    throw Error('Invalid kernel id');
-  }
-  if (typeof info.id !== 'string' || typeof info.name !== 'string') {
-    throw Error('Invalid kernel id');
-  }
 }

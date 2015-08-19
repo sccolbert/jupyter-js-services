@@ -4,9 +4,11 @@
 
 import { ISignal, defineSignal } from 'phosphor-signaling';
 
-import { IKernelId, Kernel, validateKernelId } from './kernel';
+import { IKernelId, Kernel } from './kernel';
 
 import * as utils from './utils';
+
+import * as validate from './validate';
 
 
 /**
@@ -78,7 +80,7 @@ class NotebookSession {
         throw Error('Invalid Session list');
       }
       for (var i = 0; i < success.data.length; i++) {
-        validateSessionId(success.data[i]);
+        validate.validateSessionId(success.data[i]);
       }
       return <ISessionId[]>success.data;
     });
@@ -121,7 +123,7 @@ class NotebookSession {
       if (success.xhr.status !== 201) {
         throw Error('Invalid response');
       }
-      validateSessionId(success.data);
+      validate.validateSessionId(success.data);
       this._kernel.connect(success.data.kernel);
       this._handleStatus('kernelCreated');
       return <ISessionId>success.data;
@@ -144,7 +146,7 @@ class NotebookSession {
       if (success.xhr.status !== 200) {
         throw Error('Invalid response');
       }
-      validateSessionId(success.data);
+      validate.validateSessionId(success.data);
       return <ISessionId>success.data;
     });
   }
@@ -166,7 +168,7 @@ class NotebookSession {
       if (success.xhr.status !== 204) {
         throw Error('Invalid response');
       }
-      validateSessionId(success.data);
+      validate.validateSessionId(success.data);
     }, (rejected: utils.IAjaxError) => {
       if (rejected.xhr.status === 410) {
         throw Error('The kernel was deleted but the session was not');
@@ -206,7 +208,7 @@ class NotebookSession {
       if (success.xhr.status !== 200) {
         throw Error('Invalid response');
       }
-      validateSessionId(success.data);
+      validate.validateSessionId(success.data);
       return <ISessionId>success.data;
     });
   }
@@ -237,31 +239,4 @@ class NotebookSession {
   private _sessionUrl = "unknown";
   private _wsUrl = "unknown";
   private _kernel: Kernel = null;
-}
-
-
-/**
- * Validate an object as being of ISessionId type.
- */
-function validateSessionId(info: ISessionId): void {
-  if (!info.hasOwnProperty('id') ||
-      !info.hasOwnProperty('notebook') ||
-      !info.hasOwnProperty('kernel')) {
-    throw Error('Invalid Session Model');
-  }
-  validateKernelId(info.kernel);
-  if (typeof info.id !== 'string') {
-    throw Error('Invalid Session Model');
-  }
-  validateNotebookId(info.notebook);
-}
-
-
-/**
- * Validate an object as being of INotebookId type.
- */
-function validateNotebookId(model: INotebookId): void {
-  if (!model.hasOwnProperty('path') || typeof model.path !== 'string') {
-    throw Error('Invalid Notebook Model');
-  }
 }

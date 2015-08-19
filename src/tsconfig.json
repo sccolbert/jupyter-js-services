@@ -20,6 +20,7 @@
     "kernel.ts",
     "serialize.ts",
     "session.ts",
-    "utils.ts"
+    "utils.ts",
+    "validate.ts"
   ]
 }
