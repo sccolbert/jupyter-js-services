@@ -85,7 +85,7 @@ function serializeBinary(msg: IKernelMsg): ArrayBuffer {
   }
   var msg_buf = new Uint8Array(
     offsets[offsets.length - 1] + buffers[buffers.length - 1].byteLength
-    );
+  );
   // use DataView.setUint32 for network byte-order
   var view = new DataView(msg_buf.buffer);
   // write nbufs to first 4 bytes
