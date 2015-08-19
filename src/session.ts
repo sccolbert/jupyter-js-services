@@ -20,7 +20,7 @@ var SESSION_SERVICE_URL = 'api/sessions';
 export
 interface INotebookId {
   path: string;
-};
+}
 
 
 /**
@@ -31,7 +31,7 @@ interface ISessionId {
   id: string;
   notebook: INotebookId;
   kernel: IKernelId;
-};
+}
 
 
 /**
@@ -43,7 +43,8 @@ interface ISessionOptions {
   kernelName: string;
   baseUrl: string;
   wsUrl: string;
-};
+}
+
 
 /**
  * Session object for accessing the session REST api. The session
@@ -52,7 +53,6 @@ interface ISessionOptions {
  **/
 export
 class NotebookSession {
-
   /**
    * A signal emitted when the session changes state.
    */
@@ -69,7 +69,7 @@ class NotebookSession {
     return utils.ajaxRequest(sessionUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: utils.IAjaxSuccess): ISessionId[] => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -79,7 +79,7 @@ class NotebookSession {
       for (var i = 0; i < success.data.length; i++) {
         validateSessionId(success.data[i]);
       }
-      return success.data;
+      return <ISessionId[]>success.data;
     });
   }
 
@@ -92,8 +92,9 @@ class NotebookSession {
     this._baseUrl = options.baseUrl;
     this._wsUrl = options.wsUrl;
     this._kernel = new Kernel(this._baseUrl, this._wsUrl);
-    this._sessionUrl = utils.urlJoinEncode(this._baseUrl, SESSION_SERVICE_URL,
-                                           this._id);
+    this._sessionUrl = utils.urlJoinEncode(
+      this._baseUrl, SESSION_SERVICE_URL, this._id
+    );
   }
 
   /**
@@ -122,9 +123,10 @@ class NotebookSession {
       validateSessionId(success.data);
       this._kernel.connect(success.data.kernel);
       this._handleStatus('kernelCreated');
-      return success.data;
+      return <ISessionId>success.data;
     }, (error: utils.IAjaxError) => {
       this._handleStatus('kernelDead');
+      return <ISessionId>void 0;
     });
   }
 
@@ -137,12 +139,12 @@ class NotebookSession {
     return utils.ajaxRequest(this._sessionUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: utils.IAjaxSuccess): ISessionId => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid response');
       }
       validateSessionId(success.data);
-      return success.data;
+      return <ISessionId>success.data;
     });
   }
 
@@ -165,26 +167,28 @@ class NotebookSession {
       }
       validateSessionId(success.data);
     }, (rejected: utils.IAjaxError) => {
-        if (rejected.xhr.status === 410) {
-          throw Error('The kernel was deleted but the session was not');
-        }
-        throw Error(rejected.statusText);
+      if (rejected.xhr.status === 410) {
+        throw Error('The kernel was deleted but the session was not');
+      }
+      throw Error(rejected.statusText);
     });
   }
 
   /**
    * Restart the session by deleting it and then starting it fresh.
    */
-  restart(options?: ISessionOptions): Promise<void> {
-    return this.delete().then(() => this.start()).catch(
-        () => this.start()).then(() => {
-      if (options && options.notebookPath) {
-        this._notebookPath = options.notebookPath;
-      }
-      if (options && options.kernelName) {
-        this._kernel.name = options.kernelName;
-      }
-    })
+  restart(options?: ISessionOptions): Promise<ISessionId> {
+    return this.delete().then(() => {
+      return this.start().then((id: ISessionId) => {
+        if (options && options.notebookPath) {
+          this._notebookPath = options.notebookPath;
+        }
+        if (options && options.kernelName) {
+          this._kernel.name = options.kernelName;
+        }
+        return id;
+      });
+    });
   }
 
   /**
@@ -197,12 +201,12 @@ class NotebookSession {
       dataType: "json",
       data: JSON.stringify(this._model),
       contentType: 'application/json'
-    }).then((success: utils.IAjaxSuccess): ISessionId => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid response');
       }
       validateSessionId(success.data);
-      return success.data;
+      return <ISessionId>success.data;
     });
   }
 
@@ -213,9 +217,8 @@ class NotebookSession {
   private get _model(): ISessionId {
     return {
       id: this._id,
-      notebook: {path: this._notebookPath},
-      kernel: {name: this._kernel.name,
-               id: this._kernel.id}
+      notebook: { path: this._notebookPath },
+      kernel: { name: this._kernel.name, id: this._kernel.id },
     };
   }
 
@@ -240,7 +243,8 @@ class NotebookSession {
  * Validate an object as being of ISessionId type.
  */
 function validateSessionId(info: ISessionId): void {
-  if (!info.hasOwnProperty('id') || !info.hasOwnProperty('notebook') ||
+  if (!info.hasOwnProperty('id') ||
+      !info.hasOwnProperty('notebook') ||
       !info.hasOwnProperty('kernel')) {
     throw Error('Invalid Session Model');
   }
@@ -256,7 +260,7 @@ function validateSessionId(info: ISessionId): void {
  * Validate an object as being of INotebookId type.
  */
 function validateNotebookId(model: INotebookId): void {
-   if ((!model.hasOwnProperty('path')) || (typeof model.path !== 'string')) {
-     throw Error('Invalid Notebook Model');
-   }
+  if (!model.hasOwnProperty('path') || typeof model.path !== 'string') {
+    throw Error('Invalid Notebook Model');
+  }
 }
